@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>主页</title>
+</head>
+<body>
+<div name="showBTC">
+    <h1>BTC block chain</h1>
+    <table>
+        <tr>
+            <td>高度</td>
+            <td>时间戳</td>
+            <td>前一区块哈希值</td>
+            <td>哈希值</td>
+            <td>内容</td>
+        </tr>
+        {{range .preBlocks}}
+        <tr>
+            <td>{{.Index}}</td>
+            <td>{{.Timestamp}}</td>
+            <td>{{.PreBlockHash}}</td>
+            <td>{{.Hash}}</td>
+            <td>{{.Data}}</td>
+        </tr>
+         {{end}}
+    </table>
+</div>
+</body>
+</html>

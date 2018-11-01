@@ -1,2 +1,2 @@
-# BeegoBlockChain
-Go语言beego框架实现区块链BTC
+ef797c8118f02dfb649607dd5d3f8c7623048c9c063d532cc95c5ed7a898a64f
+12345678
