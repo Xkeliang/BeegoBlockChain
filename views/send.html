@@ -6,12 +6,11 @@
 </head>
 <body>
 <form action="/send" method="post">
-    from:<input type="text" name="formAddress">
-    BTC:<input type="text" name="BTC">
+    from:<input type="text" name="form">
+    BTC:<input>
     to:<input type="text" name="to">
     matter:<input type="text" name="matter" value="">
     <button type="submit" value="确认">确认</button>
-    <h3>您账户余额：{{.UTXO}}</h3>
 </form>
 </body>
 </html>

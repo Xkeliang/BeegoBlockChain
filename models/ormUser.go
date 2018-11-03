@@ -6,7 +6,6 @@ import (
 	"time"
 	"github.com/beego/orm"
 	"github.com/beego"
-	"fmt"
 )
 
 //BTC地址（公钥）与UTXO
@@ -32,14 +31,13 @@ func Mining(pubKey string) float64 {
 	miner.Address = pubKey
 	o := orm.NewOrm()
 	err := o.Read(&miner,"Address")
-	m := miner.UTXO
 	if err != nil {
 		beego.Info("查询失败")
 		return 0
 	}else {
 		//挖矿UTXO
 		time.Sleep(2*time.Second)  //理论上是计算nounce
-		miner.UTXO =miner.UTXO+12.5      //12.5理论上动态减半
+		miner.UTXO =+12.5      //12.5理论上动态减半
 	}
 	//更新user
 	_,err = o.Update(&miner,"UTXO")
@@ -47,6 +45,5 @@ func Mining(pubKey string) float64 {
 		beego.Info("更新失败")
 		return 0
 	}
-	fmt.Println(miner.UTXO)
-	return miner.UTXO-m
+	return miner.UTXO
 }
