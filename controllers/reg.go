@@ -21,5 +21,4 @@ func (c *RegController) Post () {
 	c.Data["pubKey"] = pubKey
 	c.TplName = "registered.html"
 
-
 }
