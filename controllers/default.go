@@ -5,6 +5,7 @@ import (
 	"beegoBlockChain/models"
 	//"fmt"
 	"github.com/beego/orm"
+	"fmt"
 )
 
 type MainController struct {
@@ -40,7 +41,7 @@ func (c *MainController) ShowReg () {
 	//c.TplName="registered.html"
 	c.TplName="registered.html"
 }
-func (c *MainController) HandlerReg () {
+func (c *MainController) HandleReg () {
 	var preKey string
 	var pubKey string
 	preKey = c.GetString("preKey")
@@ -58,4 +59,15 @@ func (c *MainController) HandlerReg () {
 	c.TplName = "registered.html"
 
 
+}
+func (c *MainController)ShowMining()  {
+	c.TplName="mining.html"
+}
+func (c *MainController)HandleMining()  {
+	Address := c.GetString("address")
+	UTXO :=models.Mining(Address)
+	fmt.Println("挖出BTC=",UTXO)
+	c.Data["UTXO"]=UTXO
+	c.Data["address"]=Address
+	c.TplName="mining.html"
 }
