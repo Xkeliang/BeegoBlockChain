@@ -13,24 +13,32 @@ type MainController struct {
 }
 
 func (c *MainController) Get() {
-	//c.Data["Website"] = "beego.me"
-	//c.Data["Email"] = "astaxie@gmail.com"
 	//区块上链，验证区块
 	o := orm.NewOrm()
 	var preBlocks  []models.Block
+
+	n,err := o.QueryTable("block").All(&preBlocks)
+	if n == 0 {
+		models.CreateFirstBlock()
+		_,err = o.QueryTable("block").All(&preBlocks)
+		goto tab
+	}else {
 	var preBlock models.Block
-	_,err := o.QueryTable("block").All(&preBlocks)
 	if err != nil {
+
 		beego.Info("读取错误")
 		return
 	}else {
 		preBlock = preBlocks[len(preBlocks)-1]
 	}
+
 	isTrue :=models.IsValid(preBlock,preBlocks[(len(preBlocks)-2)])
 	if !isTrue {
 		beego.Info("验证失败")
 		return
 	}
+	}
+tab:
 	c.Data["preBlocks"]=preBlocks
 	c.TplName = "index.html"
 }

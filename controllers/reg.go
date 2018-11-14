@@ -20,5 +20,4 @@ func (c *RegController) Post () {
 	pubKey = models.RegisterAddress(preKey)
 	c.Data["pubKey"] = pubKey
 	c.TplName = "registered.html"
-
 }

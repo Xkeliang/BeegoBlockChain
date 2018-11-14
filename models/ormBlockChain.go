@@ -5,16 +5,26 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"time"
 	"crypto/sha256"
+	"github.com/beego"
+	"bytes"
+	"math/big"
+	"math"
+	"fmt"
+	"encoding/binary"
+	"os"
 	"encoding/hex"
-	//"github.com/beego"
 )
 
 type Block struct {
-	Id int  `orm:"pk;auto"`
-	Index int64  //区块编号
+	//Id int
+	Index int64  `orm:"pk;auto"`//区块编号
+	Version int64
 	Timestamp int64   //时间戳
 	PreBlockHash string
-	Hash string   //当前hash  实际中没有当前hash，通过下一个区块计算得出
+	Hash string  //当前hash  实际中没有当前hash，通过下一个区块计算得出
+	MerkelRoot string
+	Bit int64
+	Nonce int64
 
 	Data string   //区块内容
 }
@@ -27,6 +37,24 @@ func init() {
 	orm.RegisterModel(new(Block),new(User))
 	orm.RunSyncdb("default",false,true)
 }
+//设置hash
+func (block *Block) calHash() string {
+	temp := [][]byte{
+		IntToByte(block.Version),
+		[]byte(block.PreBlockHash),
+		[]byte(block.MerkelRoot),
+		IntToByte(block.Timestamp),
+		IntToByte(block.Bit),
+		IntToByte(block.Nonce),
+		[]byte(block.Data),
+	}
+	data := bytes.Join(temp,[]byte{})
+	hash :=sha256.Sum256(data)
+	beego.Info(hash[:])
+	block.Hash=hex.EncodeToString(hash[:])
+
+	return block.Hash
+}
 //创建新区块
 func CreatNewBlock(pre Block,Data string) Block {
 	var newBlock Block
@@ -37,42 +65,36 @@ func CreatNewBlock(pre Block,Data string) Block {
 	newBlock.Hash=newBlock.calHash()
 	return newBlock
 }
-//计算Hash
-func (b Block)calHash() string  {
-	blockData := string(b.Index)+string(b.Timestamp)+b.PreBlockHash+b.Data
-	//哈希计算  结果
-	value := sha256.Sum256([]byte(blockData))
-	//返回字节流转字符串
-	calHashValue := hex.EncodeToString(value[:])
-	return calHashValue
-}
+
 //头区块的特殊性，data记录特殊意义的事件
 //只调用一次，也可以直接初始化一个头区块
-/*func CreateFirstBlock() Block  {
+func CreateFirstBlock() Block  {
 	o := orm.NewOrm()
 	newBlock := Block{}
 	preBlock := Block{}
 	preBlock.Index = -1
 	preBlock.Hash=""
-	newBlock =CreatNewBlock(preBlock,"目前BTC的市值1089.77亿,20181031")
+	data := "目前BTC的市值1089.77亿,20181031"
+	newBlock =CreatNewBlock(preBlock,data)
 	//写入数据库
+	beego.Info(newBlock.Hash)
 	_,err := o.Insert(&newBlock)
 	if err != nil {
-		beego.Info("创世区块没写入")
+		beego.Info("创世区块没写入",err)
 		return newBlock
 	}
 	return  newBlock
-}*/
+}
 //数据校验
 //其他节点数据上链，存入数据库中之前校验
 func IsValid(newBlock,oldBlock Block) bool {
 	if newBlock.Index-1 !=oldBlock.Index{
 		return false
 	}
-	if newBlock.PreBlockHash != oldBlock.Hash{
+	if string(newBlock.PreBlockHash) != string(oldBlock.Hash){
 		return false
 	}
-	if newBlock.Hash != newBlock.calHash(){
+	if string(newBlock.Hash) != string(newBlock.calHash()){
 		return false
 	}
 	return true
@@ -96,3 +118,64 @@ func (bc *Blockchian)ApendBlock(newBlock *Block)  {
 
 }
 */
+const targetBits  =16
+
+type ProofOfWork struct {
+	block *Block
+	target *big.Int
+}
+
+func (pow *ProofOfWork)PrepareData(nonce int64) []byte  {
+	block := pow.block
+	temp := [][]byte{
+		IntToByte(block.Version),
+		[]byte(block.PreBlockHash),
+		[]byte(block.MerkelRoot),
+		IntToByte(block.Timestamp),
+		IntToByte(targetBits),
+		IntToByte(nonce),
+		[]byte(block.Data),
+	}
+	data :=bytes.Join(temp,[]byte{})
+	return data
+}
+
+func (pow *ProofOfWork)Run()(int64,[]byte){
+	var hash [32]byte
+	var nonce int64=0
+	var hashInt big.Int
+	for nonce < math.MaxInt64{
+		data := pow.PrepareData(nonce)
+
+		hash = sha256.Sum256(data)
+		hashInt.SetBytes(hash[:])
+		if hashInt.Cmp(pow.target) == -1 {
+			fmt.Printf("found hash:%x,nonce:%d\n",hash,nonce)
+			break
+		}else {
+			nonce++
+		}
+	}
+	return nonce,hash[:]
+}
+
+func NewProofOfWork(block *Block)*ProofOfWork  {
+	target := big.NewInt(1)
+	target.Lsh(target,uint(256-targetBits))
+	pow := ProofOfWork{target:target,block:block}
+	return &pow
+}
+//int转byte
+func IntToByte(num int64)[]byte  {
+	var buffer bytes.Buffer
+	err := binary.Write(&buffer,binary.BigEndian,num)
+	CheckErr("IntToByte",err)
+	return  buffer.Bytes()
+}
+
+func CheckErr(pos string,err error)  {
+	if err != nil {
+		fmt.Println("pos error=",pos,err)
+		os.Exit(1)
+	}
+}

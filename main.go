@@ -1,14 +1,13 @@
 package main
 
 import (
+	_"beegoBlockChain/models"
 	_ "beegoBlockChain/routers"
 	"github.com/astaxie/beego"
-	_"beegoBlockChain/models"
+
 )
 
 func main() {
 	beego.Run()
-	//models.CreateFirstBlock()
-
 }
 
