@@ -74,8 +74,13 @@ func (c *MainController)ShowMining()  {
 func (c *MainController)HandleMining()  {
 	Address := c.GetString("address")
 	UTXO :=models.Mining(Address)
+	if UTXO ==-1 {
+		c.Ctx.WriteString("有人已经成功挖出该区块")
+	}
 	fmt.Println("挖出BTC=",UTXO)
 	c.Data["UTXO"]=UTXO
 	c.Data["address"]=Address
+
+
 	c.TplName="mining.html"
 }

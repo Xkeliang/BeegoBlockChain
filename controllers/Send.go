@@ -70,21 +70,32 @@ func (c *SendController)Post()  {
 		c.Ctx.WriteString("发送失败")
 		return
 	}
-	////找到最后一个区块
 	data := c.GetString("matter")
-	var preBlocks []models.Block
-	preBlock := models.Block{}
-	newBlock := models.Block{}
-	_,err =o.QueryTable("block").All(&preBlocks)
+	/*----------------------------------------*/
+	transaction :=models.Transaction{}
+	transaction.BTC=BTC
+	transaction.From=address
+	transaction.To=address2
+	transaction.Reason=data
 
-	if err != nil {
-		beego.Info("读取错误")
-		return
-	}else {
-		preBlock = preBlocks[len(preBlocks)-1]
-	}
-	newBlock =models.CreatNewBlock(preBlock,data)
-	_,err = o.Insert(&newBlock)
+	models.Tsend(transaction)
+	/*----------------------------------------*/
+
+	////找到最后一个区块
+	//
+	//var preBlocks []models.Block
+	//preBlock := models.Block{}
+	//newBlock := models.Block{}
+	//_,err =o.QueryTable("block").All(&preBlocks)
+	//
+	//if err != nil {
+	//	beego.Info("读取错误")
+	//	return
+	//}else {
+	//	preBlock = preBlocks[len(preBlocks)-1]
+	//}
+	//newBlock =models.CreatNewBlock(preBlock,data)
+	//_,err = o.Insert(&newBlock)
 	c.Redirect("/",302)
 }
 func (c *SendController)Get()  {

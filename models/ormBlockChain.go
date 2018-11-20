@@ -50,7 +50,6 @@ func (block *Block) calHash() string {
 	}
 	data := bytes.Join(temp,[]byte{})
 	hash :=sha256.Sum256(data)
-	beego.Info(hash[:])
 	block.Hash=hex.EncodeToString(hash[:])
 
 	return block.Hash
@@ -63,6 +62,7 @@ func CreatNewBlock(pre Block,Data string) Block {
 	newBlock.PreBlockHash= pre.Hash
 	newBlock.Data=Data
 	newBlock.Hash=newBlock.calHash()
+	newBlock.MerkelRoot=PackTransaction()
 	return newBlock
 }
 
@@ -118,7 +118,7 @@ func (bc *Blockchian)ApendBlock(newBlock *Block)  {
 
 }
 */
-const targetBits  =16
+const targetBits  =25
 
 type ProofOfWork struct {
 	block *Block
@@ -140,11 +140,27 @@ func (pow *ProofOfWork)PrepareData(nonce int64) []byte  {
 	return data
 }
 
-func (pow *ProofOfWork)Run()(int64,[]byte){
+func (pow *ProofOfWork)Run(user1 *User)(int64,[]byte){
+	msg := make(chan bool)
+	mininer1 := MiningPerson{user1,msg}
+	MiningPersons=append(MiningPersons, mininer1)
+	fmt.Println("矿工")
+	fmt.Println(mininer1)
+	fmt.Println("节点")
+	fmt.Println(MiningPersons)
+	var tem  bool = false
+	go func(mininer1 *MiningPerson){
+			tem  = <- mininer1.message
+			fmt.Println("some one has finish")
+			return
+	}(&mininer1)
 	var hash [32]byte
 	var nonce int64=0
 	var hashInt big.Int
 	for nonce < math.MaxInt64{
+		if tem == true {
+			return -1,nil
+		}
 		data := pow.PrepareData(nonce)
 
 		hash = sha256.Sum256(data)
@@ -154,9 +170,16 @@ func (pow *ProofOfWork)Run()(int64,[]byte){
 			break
 		}else {
 			nonce++
+
 		}
 	}
+	go func(){
+	for _,miningr :=range MiningPersons{
+		miningr.message <- true
+	}
+	}()
 	return nonce,hash[:]
+
 }
 
 func NewProofOfWork(block *Block)*ProofOfWork  {
@@ -172,7 +195,13 @@ func IntToByte(num int64)[]byte  {
 	CheckErr("IntToByte",err)
 	return  buffer.Bytes()
 }
-
+//float转byte
+func FloatToByte(f float64)[]byte{
+	var buffer bytes.Buffer
+	err := binary.Write(&buffer,binary.BigEndian,f)
+	CheckErr("FloatToByte",err)
+	return  buffer.Bytes()
+}
 func CheckErr(pos string,err error)  {
 	if err != nil {
 		fmt.Println("pos error=",pos,err)
